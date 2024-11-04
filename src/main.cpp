@@ -1,18 +1,30 @@
 #include <vector>
-#include "core/Core.h"
+#include <iostream>
+#include "HydroCore/Core.h"
 
 namespace NH = NextHydro;
 
 int main() {
 
+    // Script resource
+    fs::path jsonPath = RESOURCE_PATH / fs::path("run.hcs.json");
+
+    // Launch GPGPU core
     auto core = new NH::Core();
 
-    std::vector<float_t> testArray({2.0, 2.0, 3.0});
-    auto buffer = core->createStorageBuffer(testArray);
-    auto computePipeline = core->createComputePipeline("test.comp.spv");
-    auto descriptorSet = core->createDescriptorSets(computePipeline, buffer);
-    core->tick(computePipeline, descriptorSet);
-    vkDeviceWaitIdle(core->device);
-    buffer.readData(testArray);
+    // Parse and run script
+    core->parseScript(jsonPath.c_str());
+    core->runScript();
+
+    // Check result
+    auto buffer = core->bufferMap["buffer1"].get();
+    std::vector<float_t> outputArray;
+    buffer->readData(outputArray);
+
+    std::cout << "\n==================== Computation Result ====================" << std::endl;
+    for (const auto& value : outputArray) {
+        std::cout << value << std::endl;
+    }
+
     return 0;
 }
